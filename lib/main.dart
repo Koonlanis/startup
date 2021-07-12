@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:english_words/english_words.dart';
+import 'package:startupnamer/theme.dart';
 
 void main() => runApp(MyApp());
 
@@ -12,6 +13,10 @@ class MyApp extends StatelessWidget {
           child: RandomWords(),
         ),
       ),
+      theme: ThemeData(
+        // Add the 3 lines from here...
+        primaryColor: primaryTheme,
+      ),
     );
   }
 }
@@ -23,14 +28,52 @@ class RandomWords extends StatefulWidget {
 
 class _RandomWordsState extends State<RandomWords> {
   final _suggestions = <WordPair>[];
+  final _saved = <WordPair>{}; // NEW
   final _biggerFont = const TextStyle(fontSize: 18.0);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Startup Name Generator'),
+        actions: [
+          IconButton(icon: Icon(Icons.list), onPressed: _pushSaved),
+        ],
       ),
       body: _buildSuggestions(),
+    );
+  }
+
+  void _pushSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        // NEW lines from here...
+        builder: (BuildContext context) {
+          final tiles = _saved.map(
+            (WordPair pair) {
+              return ListTile(
+                title: Text(
+                  pair.asPascalCase,
+                  style: _biggerFont,
+                ),
+                leading: Icon(
+                  Icons.favorite_border_outlined,
+                  color: Colors.red,
+                ),
+              );
+            },
+          );
+          final divided = tiles.isNotEmpty
+              ? ListTile.divideTiles(context: context, tiles: tiles).toList()
+              : <Widget>[];
+
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Saved Suggestions'),
+            ),
+            body: ListView(children: divided),
+          );
+        }, // ...to here.
+      ),
     );
   }
 
@@ -49,11 +92,27 @@ class _RandomWordsState extends State<RandomWords> {
   }
 
   Widget _buildRow(WordPair pair) {
+    final alreadySaved = _saved.contains(pair); // NEW
     return ListTile(
       title: Text(
         pair.asPascalCase,
         style: _biggerFont,
       ),
+      trailing: Icon(
+        // NEW from here...
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : null,
+      ), // ... to here.
+      onTap: () {
+        // NEW lines from here...
+        setState(() {
+          if (alreadySaved) {
+            _saved.remove(pair);
+          } else {
+            _saved.add(pair);
+          }
+        });
+      },
     );
   }
 }
